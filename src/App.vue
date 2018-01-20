@@ -11,7 +11,6 @@ export default {
 
 <template>
   <v-app dark>
-    <h1>Bíblia Sagrada</h1>
     <Passage></Passage>
   </v-app>
 </template>

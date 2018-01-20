@@ -9,15 +9,24 @@ export default {
         return {
             books: [],
             chapters: [],
-            verses: [],
-            book: '',
-            chapter: '',
-            verse: ''
+            verses: []
         }
+    },
+    created: function () {
+        window.addEventListener('keyup', this.handleKey)
     },
     computed: {
         passage () {
             return this.$store.state.passage.passage
+        },
+        book () {
+            return this.$store.state.passage.book
+        },
+        chapter () {
+            return this.$store.state.passage.chapter
+        },
+        verse () {
+            return this.$store.state.passage.verse
         }
     },
     mounted () {
@@ -25,7 +34,6 @@ export default {
     },
     methods: {
         changeBook ($event) {
-            console.log($event)
             const payload = {
                 book: $event
             }
@@ -94,13 +102,15 @@ export default {
                 .then((response) => {
                     const payload = {
                         id: response.data.passage.id,
+                        book: response.data.passage.bookId,
                         chapter: response.data.passage.chapter,
                         verse: response.data.passage.verse,
                         passage: response.data.passage.text
                     }
                     this.$store.commit('GET_PASSAGE', payload)
-                    this.$store.commit('CHANGE_CHAPTER', payload)
                     this.$store.commit('CHANGE_VERSE', payload)
+                    this.$store.commit('CHANGE_CHAPTER', payload)
+                    this.$store.commit('CHANGE_BOOK', payload)
                 })
             .catch((error) => {
                 console.log(error)
@@ -112,6 +122,7 @@ export default {
                 .then((response) => {
                     const payload = {
                         id: response.data.passage.id,
+                        book: response.data.passage.bookId,
                         chapter: response.data.passage.chapter,
                         verse: response.data.passage.verse,
                         passage: response.data.passage.text
@@ -119,19 +130,30 @@ export default {
                     this.$store.commit('GET_PASSAGE', payload)
                     this.$store.commit('CHANGE_CHAPTER', payload)
                     this.$store.commit('CHANGE_VERSE', payload)
+                    this.$store.commit('CHANGE_BOOK', payload)
                 })
             .catch((error) => {
                 console.log(error)
             })
+        },
+        handleKey: function(event){
+            switch(event.key) {
+                case 'ArrowRight':
+                    this.getNextPassage()
+                    break;
+                case 'ArrowLeft':
+                    this.getPreviousPassage()
+                    break;
+            }
         }
     }
 }
 </script>
 
 <template>
-    <div>
-        <v-card flat class="py-5">
-            <v-select
+    <v-container grid-list-md text-xs-center>
+        <v-layout row wrap>
+            <v-select 
                 v-bind:items="books"
                 v-model="book"
                 label="Livro"
@@ -139,6 +161,7 @@ export default {
                 @change="changeBook($event)"
                 item-text="name"
                 item-value="id"
+                noDataText="Nenhum livro disponível com este nome"
             ></v-select>
             <v-select
                 v-bind:items="chapters"
@@ -148,6 +171,7 @@ export default {
                 @change="changeChapter($event)"
                 item-text="chapter"
                 item-value="chapter"
+                noDataText="Nenhum capítulo encontrado com este número"
             ></v-select> 
             <v-select
                 v-bind:items="verses"
@@ -157,13 +181,29 @@ export default {
                 @change="changeVerse($event)"
                 item-text="verse"
                 item-value="verse"
+                noDataText="Nenhum versículo encontrado com este número"
             ></v-select> 
-            <v-btn color="primary" @click="getPassage()" dark>Ler</v-btn>
-        </v-card>
-        <p> {{ passage }} </p>
-        <div class="text-xs-center">
-            <v-btn round color="primary" @click="getPreviousPassage()" dark>Anterior</v-btn>
-            <v-btn round color="primary" @click="getNextPassage()" dark>Próxima</v-btn>
-        </div>
-    </div>
+            <v-btn round color="primary" @click="getPassage()" dark>Ler</v-btn>
+        </v-layout>
+        <h4> {{ passage }} </h4>
+    </v-container>
 </template>
+
+<style>
+
+h4 {
+    font-size: 4em;
+}
+html {
+    overflow: scroll;
+    overflow-x: hidden;
+}
+::-webkit-scrollbar {
+    width: 0px;  /* remove scrollbar space */
+    background: transparent;  /* optional: just make scrollbar invisible */
+}
+/* optional: show position indicator in red */
+::-webkit-scrollbar-thumb {
+    background: #FF0000;
+}
+</style>
