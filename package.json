@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^0.17.1",
     "vue": "^2.5.11",
+    "vuetify": "^0.17.6",
     "vuex": "^3.0.1"
   },
   "browserslist": [

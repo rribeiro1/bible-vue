@@ -1,20 +1,17 @@
 <script>
-import PassageForm from './components/PassageForm'
-import PassageView from './components/PassageView'
+import Passage from './components/Passage'
 
 export default {
   name: 'Biblia',
   components: {
-    PassageForm,
-    PassageView
+    Passage
   }
 }
 </script>
 
 <template>
-  <div>
+  <v-app dark>
     <h1>Bíblia Sagrada</h1>
-    <PassageForm></PassageForm>
-    <PassageView></PassageView>
-  </div>
+    <Passage></Passage>
+  </v-app>
 </template>
