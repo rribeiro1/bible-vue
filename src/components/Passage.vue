@@ -1,4 +1,6 @@
 <script>
+
+import { mapState, mapActions } from 'vuex'
 import axios from 'axios'
 
 const URL = 'http://localhost:3003/'
@@ -16,17 +18,15 @@ export default {
         window.addEventListener('keyup', this.handleKey)
     },
     computed: {
-        passage () {
-            return this.$store.state.passage.passage
-        },
-        book () {
-            return this.$store.state.passage.book
-        },
-        chapter () {
-            return this.$store.state.passage.chapter
-        },
-        verse () {
-            return this.$store.state.passage.verse
+        ...mapState({
+            id: state => state.passage.id,
+            passage: state => state.passage.passage,
+            book: state => state.passage.book,
+            chapter: state => state.passage.chapter,
+            verse: state => state.passage.verse
+        }),
+        reference () {
+            return this.$store.getters.reference
         }
     },
     mounted () {
@@ -37,21 +37,21 @@ export default {
             const payload = {
                 book: $event
             }
-            this.$store.commit('CHANGE_BOOK', payload)
+            this.setBook(payload)
             this.getAllChapters()
         },
         changeChapter ($event) {
             const payload = {
                 chapter: $event
             }
-            this.$store.commit('CHANGE_CHAPTER', payload)
+            this.setChapter(payload)
             this.getAllVerses()
         },
         changeVerse ($event) {
             const payload = {
                 verse: $event
             }
-            this.$store.commit('CHANGE_VERSE', payload)
+            this.setVerse(payload)
         },
         getAllBooks() {
             axios.get(`${URL}/books/`)
@@ -63,8 +63,7 @@ export default {
             })
         },
         getAllChapters() {
-            const { book } = this.$store.state.passage
-            axios.get(`${URL}/books/${book}/chapters`)
+            axios.get(`${URL}/books/${this.book}/chapters`)
                 .then((response) => {
                     this.chapters = response.data.chapters
                 })
@@ -73,8 +72,7 @@ export default {
             })
         },
          getAllVerses() {
-            const { book, chapter } = this.$store.state.passage
-            axios.get(`${URL}/books/${book}/chapters/${chapter}/verses`)
+            axios.get(`${URL}/books/${this.book}/chapters/${this.chapter}/verses`)
                 .then((response) => {
                     this.verses = response.data.verses
                 })
@@ -82,23 +80,24 @@ export default {
                 console.log(error)
             })
         },
-            getPassage() {
-            const { book, chapter, verse } = this.$store.state.passage
-            axios.get(`${URL}/books/${book}/chapters/${chapter}/verses/${verse}`)
+        getPassageByProps() {
+            axios.get(`${URL}/books/${this.book}/chapters/${this.chapter}/verses/${this.verse}`)
                 .then((response) => {
                     const payload = {
                         id: response.data.verse.id,
+                        book: response.data.verse.bookId,
+                        chapter: response.data.verse.chapter,
+                        verse: response.data.verse.verse,
                         passage: response.data.verse.text
                     }
-                    this.$store.commit('GET_PASSAGE', payload)
+                    this.getPassage(payload)
                 })
             .catch((error) => {
                 console.log(error)
             })
         },
         getNextPassage() { //keycode 39
-            const { id } = this.$store.state.passage
-            axios.get(`${URL}/passages/${id}/next`)
+            axios.get(`${URL}/passages/${this.id}/next`)
                 .then((response) => {
                     const payload = {
                         id: response.data.passage.id,
@@ -107,18 +106,14 @@ export default {
                         verse: response.data.passage.verse,
                         passage: response.data.passage.text
                     }
-                    this.$store.commit('GET_PASSAGE', payload)
-                    this.$store.commit('CHANGE_VERSE', payload)
-                    this.$store.commit('CHANGE_CHAPTER', payload)
-                    this.$store.commit('CHANGE_BOOK', payload)
+                    this.getPassage(payload)
                 })
             .catch((error) => {
                 console.log(error)
             })
         },
         getPreviousPassage() { //keycode 37
-            const { id } = this.$store.state.passage
-            axios.get(`${URL}/passages/${id}/previous`)
+            axios.get(`${URL}/passages/${this.id}/previous`)
                 .then((response) => {
                     const payload = {
                         id: response.data.passage.id,
@@ -127,10 +122,7 @@ export default {
                         verse: response.data.passage.verse,
                         passage: response.data.passage.text
                     }
-                    this.$store.commit('GET_PASSAGE', payload)
-                    this.$store.commit('CHANGE_CHAPTER', payload)
-                    this.$store.commit('CHANGE_VERSE', payload)
-                    this.$store.commit('CHANGE_BOOK', payload)
+                    this.getPassage(payload)
                 })
             .catch((error) => {
                 console.log(error)
@@ -145,15 +137,17 @@ export default {
                     this.getPreviousPassage()
                     break;
             }
-        }
+        },
+        ...mapActions (['setBook', 'setChapter', 'setVerse', 'getPassage']),
     }
 }
 </script>
 
 <template>
-    <v-container grid-list-md text-xs-center>
+    <v-container grid-list-md text-xs-center class="header">
         <v-layout row wrap>
-            <v-select 
+            <img src="../assets/pib-logo.png" height="61" width="167"/>
+            <v-select class="mr-3 ml-3"
                 v-bind:items="books"
                 v-model="book"
                 label="Livro"
@@ -163,7 +157,7 @@ export default {
                 item-value="id"
                 noDataText="Nenhum livro disponível com este nome"
             ></v-select>
-            <v-select
+            <v-select class="mr-3 ml-3"
                 v-bind:items="chapters"
                 v-model="chapter"
                 label="Capítulo"
@@ -173,7 +167,7 @@ export default {
                 item-value="chapter"
                 noDataText="Nenhum capítulo encontrado com este número"
             ></v-select> 
-            <v-select
+            <v-select class="mr-3 ml-3"
                 v-bind:items="verses"
                 v-model="verse"
                 label="Versículo"
@@ -183,16 +177,29 @@ export default {
                 item-value="verse"
                 noDataText="Nenhum versículo encontrado com este número"
             ></v-select> 
-            <v-btn round color="primary" @click="getPassage()" dark>Ler</v-btn>
+            <v-btn :disabled="chapter == null || verse == null" round color="primary" @click="getPassageByProps()" dark>Ler</v-btn>
         </v-layout>
-        <h4> {{ passage }} </h4>
+        <div class="passagem">
+            <h1> {{ reference }} </h1>
+            <h4> {{ passage }} </h4>
+        </div>
     </v-container>
 </template>
 
 <style>
+.header {
+    margin-top: 20px;
+}
 
+.passagem {
+    margin-top: 50px;
+}
 h4 {
-    font-size: 4em;
+    font-size: 3.5em;
+    text-align: center;
+}
+h1 {
+    color: darkorange
 }
 html {
     overflow: scroll;
