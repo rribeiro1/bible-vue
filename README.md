@@ -13,3 +13,7 @@
 3. Rode o servidor de desenvolvimento com `npm run dev` 
 4. Para fazer o build com minificação para produção usar o comando `npm run build`
 5. O *endpoint* do serviço estará disponível em http://localhost:8080 .
+
+### Tecnologias
+
+`VueJs`, `Vuex`, `Vuetify`
